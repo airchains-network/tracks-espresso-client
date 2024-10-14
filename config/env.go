@@ -29,8 +29,12 @@ func EnvConfig() error {
 		return fmt.Errorf("SERVER_PORT is not set")
 	}
 	GinEvn = os.Getenv("GIN_ENV")
-	if ServerPort == "" {
+	if GinEvn == "" {
 		return fmt.Errorf("GIN_ENV is not set")
+	}
+	FilePath = os.Getenv("FILE_PATH")
+	if FilePath == "" {
+		return fmt.Errorf("FILE_PATH is not set")
 	}
 
 	// ! DATABASE CONFIG

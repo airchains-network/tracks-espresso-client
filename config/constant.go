@@ -10,3 +10,4 @@ var GinEvn string
 // * DATABASE CONFIG
 
 var MongoUrl string
+var FilePath string
