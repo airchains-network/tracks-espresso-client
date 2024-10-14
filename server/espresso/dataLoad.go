@@ -16,7 +16,7 @@ import (
 var mu sync.Mutex
 
 // LoadDataFromFile loads the data from main.json and inserts it into MongoDB
-func LoadDataFromFile(filePath string, db *database.DB) ([]types.EspressoDataStruct, error) {
+func LoadDataFromFile(filePath string, db *database.DB) ([]types.EspressoSchemaV1, error) {
 	mu.Lock() 
 
 	// Open the JSON file
@@ -43,7 +43,7 @@ func LoadDataFromFile(filePath string, db *database.DB) ([]types.EspressoDataStr
 	}
 
 	// Unmarshal the JSON content into a slice of EspressoDataStruct
-	var espressoData []types.EspressoDataStruct
+	var espressoData []types.EspressoSchemaV1
 	err = json.Unmarshal(byteValue, &espressoData)
 	if err != nil {
 		jsonFile.Close() // Close the file before returning

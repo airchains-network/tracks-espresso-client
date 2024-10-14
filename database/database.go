@@ -7,6 +7,7 @@ import (
 	"github.com/airchains-network/tracks-espresso-client/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
 )
 
 // DB struct encapsulates the MongoDB database and collection

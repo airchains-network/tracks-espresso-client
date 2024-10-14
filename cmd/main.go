@@ -13,6 +13,7 @@ import (
 	"github.com/airchains-network/tracks-espresso-client/server/espresso"
 	"log"
 	"github.com/airchains-network/tracks-espresso-client/pruning"
+	"sync"
 )
 
 func main() {
@@ -53,14 +54,26 @@ func main() {
 	// Print the loaded data (you can modify this as per your requirement)
 	// fmt.Printf("Espresso Data: %+v\n", espressoData)
 
-	pruning.StartPruningScheduler(ctx, config.FilePath, dbInstance)
-	// gin server init
-	serverInstance := server.InitServer(ctx, dbInstance, clientInit)
-	uri := fmt.Sprintf("0.0.0.0:%s", config.ServerPort)
-	runnerErr := serverInstance.Run(uri)
-	if runnerErr != nil {
-		deadlogs.Error(runnerErr.Error())
-	}else{
-		deadlogs.Success("server started")
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		pruning.StartPruningScheduler(ctx, config.FilePath, dbInstance)
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		serverInstance := server.InitServer(ctx, dbInstance, clientInit)
+		uri := fmt.Sprintf("0.0.0.0:%s", config.ServerPort)
+		runnerErr := serverInstance.Run(uri)
+		if runnerErr != nil {
+			deadlogs.Error(runnerErr.Error())
+		} else {
+			deadlogs.Success("server started")
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
 }

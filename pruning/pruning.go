@@ -48,21 +48,19 @@ func clearFile(filePath string) error {
 
 // StartPruningScheduler runs the pruning process every 30 minutes
 func StartPruningScheduler(ctx context.Context, filePath string, dbInstance *database.DB) {
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				deadlogs.Info("Pruning scheduler stopped.")
-				return
-			default:
-				time.Sleep(1 * time.Minute) // Adjusted to 30 minutes for the actual implementation
-				deadlogs.Info("Starting prune and store process...")
-				if err := PruneAndStore(ctx, filePath, dbInstance); err != nil {
-					deadlogs.Error(fmt.Sprintf("Error during prune and store: %s", err))
-				} else {
-					deadlogs.Success("Prune and store completed successfully")
-				}
+	for {
+		select {
+		case <-ctx.Done():
+			deadlogs.Info("Pruning scheduler stopped.")
+			return
+		default:
+			time.Sleep(10 * time.Minute) // Adjusted to 30 minutes for the actual implementation
+			deadlogs.Info("Starting prune and store process...")
+			if err := PruneAndStore(ctx, filePath, dbInstance); err != nil {
+				deadlogs.Error(fmt.Sprintf("Error during prune and store: %s", err))
+			} else {
+				deadlogs.Success("Prune and store completed successfully")
 			}
 		}
-	}()
+	}
 }

@@ -37,10 +37,11 @@ func InitServer(ctx context.Context, mongoDB *database.DB, rc *client.Client) *S
 
 
 func (s *Server) Handler(ctx context.Context, mongoDB *database.DB, rc *client.Client) {
-	s.PostHandle("/track/espresso", espresso.TracksEspressoDataLoad(ctx, mongoDB))
 	// s.GetHandle("/track/data", func(c *gin.Context) {
 	// 	prune.LoadData(c, config.FilePath)
 	// })
+	s.PostHandle("/track/espresso", espresso.TracksEspressoDataLoad(config.FilePath, mongoDB))
+		
 }
 
 func (s *Server) PostHandle(routes string, handler gin.HandlerFunc) {

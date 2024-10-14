@@ -2,7 +2,6 @@ package types
 
 type MongoTracksEspressoStruct struct {
 	StationId    string                  `bson:"station_id"`
-	EspressoVmId string                  `bson:"espresso_vm_id"`
 	EspressoData MongoEspressoDataStruct `bson:"espresso_data"`
 }
 
