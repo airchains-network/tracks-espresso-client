@@ -10,6 +10,9 @@ import (
 	"os"
 	// "path/filepath"
 	"encoding/json"
+    // "path/filepath"
+    "time"
+    // "github.com/airchains-network/tracks-espresso-client/config"
 
 )
 
@@ -103,64 +106,134 @@ import (
 
 // TracksEspressoDataLoad handles the API to load data into main.json and MongoDB
 func TracksEspressoDataLoad(filePath string, db *database.DB) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        mu.Lock()
-        defer mu.Unlock()
+	return func(c *gin.Context) {
+		mu.Lock()
+		defer mu.Unlock()
 
-        // Load existing data from file if it exists
-        var espressoData []types.EspressoSchemaV1
-        if fileBytes, err := os.ReadFile(filePath); err == nil {
-            if err := json.Unmarshal(fileBytes, &espressoData); err != nil {
-                fmt.Printf("Error unmarshalling file: %v", err)
-                c.JSON(500, gin.H{"message": "Error reading data"})
-                return
-            }
-        } else if os.IsNotExist(err) {
-            // If the file does not exist, create an empty array
-            espressoData = []types.EspressoSchemaV1{}
-        } else {
-            fmt.Printf("Error reading file: %v", err)
-            c.JSON(500, gin.H{"message": "Error reading file"})
-            return
-        }
+		// Check if the file exists, if not, create it
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			// Create the directory if it doesn't exist
+			if err := os.MkdirAll("file.data", os.ModePerm); err != nil {
+				fmt.Printf("Error creating directory: %v\n", err)
+				c.JSON(500, gin.H{"message": "Error creating directory"})
+				return
+			}
 
-        // Bind incoming data from the API request
-        var newData types.EspressoSchemaV1
-        if err := c.ShouldBindJSON(&newData); err != nil {
-            c.JSON(400, gin.H{"error": "Invalid request"})
-            return
-        }
+			// Create the file and initialize it with an empty JSON array
+			if err := os.WriteFile(filePath, []byte("[]"), 0644); err != nil {
+				fmt.Printf("Error creating file: %v\n", err)
+				c.JSON(500, gin.H{"message": "Error creating file"})
+				return
+			}
+		}
 
-        // Append new data to the existing array
-        espressoData = append(espressoData, newData)
+		// Load existing data from the file
+		var espressoData []types.EspressoSchemaV1
+		fileBytes, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Printf("Error reading file: %v\n", err)
+			c.JSON(500, gin.H{"message": "Error reading file"})
+			return
+		}
 
-        // Marshal the updated data back to JSON
-        fileData, err := json.MarshalIndent(espressoData, "", "  ")
-        if err != nil {
-            fmt.Printf("Error marshalling data: %v", err)
-            c.JSON(500, gin.H{"message": "Error saving data"})
-            return
-        }
+		if err := json.Unmarshal(fileBytes, &espressoData); err != nil {
+			fmt.Printf("Error unmarshalling file: %v\n", err)
+			c.JSON(500, gin.H{"message": "Error unmarshalling data"})
+			return
+		}
 
-        // Write the updated data to the file (create file if it doesn't exist)
-        if err := os.WriteFile(filePath, fileData, 0644); err != nil {
-            fmt.Printf("Error writing to file: %v", err)
-            c.JSON(500, gin.H{"message": "Error saving data"})
-            return
-        }
+		// Bind incoming data from the API request
+		var newData types.EspressoSchemaV1
+		if err := c.ShouldBindJSON(&newData); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid request"})
+			return
+		}
 
-        // Prepare documents for MongoDB insertion
-        var mongoDocuments []interface{}
-        mongoDocuments = append(mongoDocuments, newData)
+		// Append new data to the existing array
+		espressoData = append(espressoData, newData)
 
-        // Insert data into MongoDB
-        if err := db.InsertMany("espressodata", mongoDocuments); err != nil {
-            fmt.Printf("Error inserting data into MongoDB: %v", err)
-            c.JSON(500, gin.H{"message": "Error saving to database"})
-            return
-        }
+		// Marshal the updated data back to JSON and write to the file
+		fileData, err := json.MarshalIndent(espressoData, "", "  ")
+		if err != nil {
+			fmt.Printf("Error marshalling data: %v\n", err)
+			c.JSON(500, gin.H{"message": "Error saving data"})
+			return
+		}
 
-        c.JSON(200, gin.H{"message": "Data saved successfully"})
-    }
+		// Write the updated data to the file
+		if err := os.WriteFile(filePath, fileData, 0644); err != nil {
+			fmt.Printf("Error writing to file: %v\n", err)
+			c.JSON(500, gin.H{"message": "Error saving data"})
+			return
+		}
+
+		// Insert new data into MongoDB
+		fmt.Println("i'm inserting espresso")
+		time.Sleep(3 *time.Minute)
+		if err := db.InsertMany("espressodata", []interface{}{newData}); err != nil {
+			fmt.Printf("Error inserting data into MongoDB: %v\n", err)
+			c.JSON(500, gin.H{"message": "Error saving to database"})
+			return
+		}
+
+		c.JSON(200, gin.H{"message": "Data saved successfully"})
+	}
 }
 
+// InitBufferFlush initializes a timer to flush data to MongoDB every 5 minutes
+func InitBufferFlush(filePath string, db *database.DB) {
+	flushInterval := 5 * time.Minute
+	ticker := time.NewTicker(flushInterval)
+
+	go func() {
+		for {
+			<-ticker.C
+			flushFileDataToMongo(filePath, db)
+		}
+	}()
+}
+
+// flushFileDataToMongo sends accumulated data from the file to MongoDB every 5 minutes
+func flushFileDataToMongo(filePath string, db *database.DB) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Read data from file
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("Error reading file for flushing: %v\n", err)
+		return
+	}
+
+	// Unmarshal file data into EspressoSchemaV1 array
+	var espressoData []types.EspressoSchemaV1
+	if err := json.Unmarshal(fileBytes, &espressoData); err != nil {
+		fmt.Printf("Error unmarshalling data for flushing: %v\n", err)
+		return
+	}
+
+	// If no data, return early
+	if len(espressoData) == 0 {
+		fmt.Println("No data to flush to MongoDB")
+		return
+	}
+
+	// Insert data into MongoDB
+	var mongoDocuments []interface{}
+	for _, data := range espressoData {
+		mongoDocuments = append(mongoDocuments, data)
+	}
+
+	if err := db.InsertMany("espressodata", mongoDocuments); err != nil {
+		fmt.Printf("Error inserting data into MongoDB: %v\n", err)
+		return
+	}
+
+	// Clear the file after successful insertion
+	if err := os.WriteFile(filePath, []byte("[]"), 0644); err != nil {
+		fmt.Printf("Error clearing file: %v\n", err)
+		return
+	}
+
+	fmt.Println("Data successfully flushed to MongoDB and cleared from file.")
+}

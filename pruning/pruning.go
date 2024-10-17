@@ -23,6 +23,7 @@ func PruneAndStore(ctx context.Context, filePath string, dbInstance *database.DB
 	deadlogs.Info("Pruning and storing data...")
 
 	// Load the data from the JSON file and insert it into MongoDB
+	fmt.Println("im insering pruning")
 	if _, err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
 		return fmt.Errorf("error during data load and insertion: %s", err)
 	}
@@ -48,19 +49,25 @@ func clearFile(filePath string) error {
 
 // StartPruningScheduler runs the pruning process every 30 minutes
 func StartPruningScheduler(ctx context.Context, filePath string, dbInstance *database.DB) {
-	for {
-		select {
-		case <-ctx.Done():
-			deadlogs.Info("Pruning scheduler stopped.")
-			return
-		default:
-			time.Sleep(10 * time.Minute) // Adjusted to 30 minutes for the actual implementation
-			deadlogs.Info("Starting prune and store process...")
-			if err := PruneAndStore(ctx, filePath, dbInstance); err != nil {
-				deadlogs.Error(fmt.Sprintf("Error during prune and store: %s", err))
-			} else {
-				deadlogs.Success("Prune and store completed successfully")
-			}
-		}
+// 	
+for {
+	// Wait for 30 minutes before starting the pruning process
+	time.Sleep(3* time.Minute)
+
+	deadlogs.Info("Pruning process started...")
+
+	// Lock the mutex to prevent data loading while pruning
+	mu.Lock()
+
+	// Perform the pruning operation
+	err := clearFile(filePath)
+	if err != nil {
+		deadlogs.Error(fmt.Sprintf("Error during pruning: %s", err.Error()))
+	} else {
+		deadlogs.Success("Pruning completed successfully")
 	}
+
+	// Unlock the mutex after pruning is completed
+	mu.Unlock()
+}
 }
