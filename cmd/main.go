@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/airchains-network/tracks-espresso-client/server/espresso"
+
 	// "path/filepath"
 
 	"github.com/airchains-network/tracks-espresso-client/client"
@@ -15,13 +17,12 @@ import (
 	"sync"
 
 	"github.com/airchains-network/tracks-espresso-client/database"
-	"github.com/airchains-network/tracks-espresso-client/pruning"
 	"github.com/airchains-network/tracks-espresso-client/server"
-	"github.com/airchains-network/tracks-espresso-client/server/espresso"
-	"time"
 	// "path/filepath"
 )
+
 var dataLock sync.Mutex
+
 func main() {
 	ctx := context.Background()
 
@@ -47,41 +48,42 @@ func main() {
 	} else {
 		deadlogs.Success("database initialized")
 	}
+
 	// Load the data from the JSON file and insert it into MongoDB
 	// if _ , err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
 	// 	log.Fatalf("Error loading and inserting data: %s", err)
 	// } else {
 	// 	deadlogs.Success("Data loaded and inserted successfully")
-	// }	
+	// }
 
 	// Print the loaded data for debugging (optional)
 	// fmt.Printf("Loaded Espresso Data: %+v\n", espressoData)
 	// Print the loaded data (you can modify this as per your requirement)
 	// fmt.Printf("Espresso Data: %+v\n", espressoData)
-	go func() {
-		for {
-			deadlogs.Info("Checking and loading data from JSON file...")
-
-			// Lock the data to prevent collision with pruning
-			dataLock.Lock()
-			time.Sleep(time.Minute *1)
-			if _, err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
-				deadlogs.Error(fmt.Sprintf("Error loading data: %s", err))
-			} else {
-				deadlogs.Success("Data loaded and inserted successfully")
-			}
-			dataLock.Unlock()
-
-			// Wait before the next check
-			time.Sleep(2 * time.Minute)
-		}
-	}()
+	//go func() {
+	//	for {
+	//		deadlogs.Info("Checking and loading data from JSON file...")
+	//
+	//		// Lock the data to prevent collision with pruning
+	//		dataLock.Lock()
+	//		time.Sleep(time.Minute * 1)
+	//		if _, err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
+	//			deadlogs.Error(fmt.Sprintf("Error loading data: %s", err))
+	//		} else {
+	//			deadlogs.Success("Data loaded and inserted successfully")
+	//		}
+	//		dataLock.Unlock()
+	//
+	//		// Wait before the next check
+	//		time.Sleep(2 * time.Minute)
+	//	}
+	//}()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
-		pruning.StartPruningScheduler(ctx,config.FilePath ,dbInstance)
+		espresso.DataLoadFunction(dbInstance)
 		wg.Done()
 	}()
 

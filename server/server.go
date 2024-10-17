@@ -31,17 +31,12 @@ func InitServer(ctx context.Context, mongoDB *database.DB, rc *client.Client) *S
 	ginCall := &Server{Engine: ginServer}
 
 	ginCall.Handler(ctx, mongoDB, rc)
-	
+
 	return ginCall
 }
 
-
 func (s *Server) Handler(ctx context.Context, mongoDB *database.DB, rc *client.Client) {
-	// s.GetHandle("/track/data", func(c *gin.Context) {
-	// 	prune.LoadData(c, config.FilePath)
-	// })
-	s.PostHandle("/track/espresso", espresso.TracksEspressoDataLoad(config.FilePath, mongoDB))
-		
+	s.PostHandle("/track/espresso", espresso.TracksEspressoDataLoad())
 }
 
 func (s *Server) PostHandle(routes string, handler gin.HandlerFunc) {
