@@ -14,19 +14,23 @@ import (
 func DataLoadFunction(mongo *database.DB) {
 	for {
 		var espressoData []interface{}
+		if err := ensureFileExists(config.FilePath); err != nil {
+			// Handle error, you can log it or take necessary actions
+			return
+		}
 
 		// Acquire the file lock to prevent concurrent access
 		fileLock.Lock()
 
-		// Check if the file exists, if not, create it
-		if _, err := os.Stat(config.FilePath); os.IsNotExist(err) {
-			// Create the directory if it doesn't exist
-			if err := os.MkdirAll("file.data", os.ModePerm); err != nil {
-			}
-			// Create the file and initialize it with an empty JSON array
-			if err := os.WriteFile(config.FilePath, []byte("[]"), 0644); err != nil {
-			}
-		}
+		// // Check if the file exists, if not, create it
+		// if _, err := os.Stat(config.FilePath); os.IsNotExist(err) {
+		// 	// Create the directory if it doesn't exist
+		// 	if err := os.MkdirAll("file.data", os.ModePerm); err != nil {
+		// 	}
+		// 	// Create the file and initialize it with an empty JSON array
+		// 	if err := os.WriteFile(config.FilePath, []byte("[]"), 0644); err != nil {
+		// 	}
+		// }
 
 		// Read file contents
 		fileBytes, err := os.ReadFile(config.FilePath)
@@ -58,9 +62,21 @@ func DataLoadFunction(mongo *database.DB) {
 		// Release the file lock
 		fileLock.Unlock()
 
-		deadlogs.Debug("Data loaded successfully, file purged, retrying in 30 seconds")
+		deadlogs.Success("Data loaded successfully, file purged, retrying in 30 seconds")
 
 		// Wait 30 seconds before retrying
 		time.Sleep(time.Second * 30)
 	}
+}
+func ensureFileExists(filePath string) error {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		emptyData := []byte("[]")
+		if err := os.MkdirAll("file.data", os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create directory: %s", err)
+		}
+		if err := os.WriteFile(filePath, emptyData, 0644); err != nil {
+			return fmt.Errorf("failed to create empty JSON file: %s", err)
+		}
+	}
+	return nil
 }

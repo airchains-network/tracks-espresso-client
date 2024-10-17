@@ -3,12 +3,13 @@ package espresso
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/airchains-network/tracks-espresso-client/config"
-	"github.com/airchains-network/tracks-espresso-client/types"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/airchains-network/tracks-espresso-client/config"
+	"github.com/airchains-network/tracks-espresso-client/types"
+	"github.com/gin-gonic/gin"
 )
 
 var fileLock sync.Mutex // Global mutex lock
