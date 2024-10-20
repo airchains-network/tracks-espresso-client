@@ -3,102 +3,66 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/airchains-network/tracks-espresso-client/server/espresso"
-
-	// "path/filepath"
+	"sync"
 
 	"github.com/airchains-network/tracks-espresso-client/client"
 	"github.com/airchains-network/tracks-espresso-client/config"
-
-	"github.com/deadlium/deadlogs"
-
-	// "log"
-	// "os"
-	"sync"
-
 	"github.com/airchains-network/tracks-espresso-client/database"
 	"github.com/airchains-network/tracks-espresso-client/server"
-	// "path/filepath"
+	"github.com/airchains-network/tracks-espresso-client/server/espresso"
+	"github.com/deadlium/deadlogs"
 )
-
-var dataLock sync.Mutex
 
 func main() {
 	ctx := context.Background()
 
-	// env variable load
+	// Load environment variables
 	if err := config.EnvConfig(); err != nil {
-		deadlogs.Error(fmt.Sprintf("error to config environment: %s", err.Error()))
-	} else {
-		deadlogs.Success("config environment set to success")
+		deadlogs.Error(fmt.Sprintf("Error configuring environment: %s", err.Error()))
+		return
 	}
+	deadlogs.Success("Environment configured successfully")
 
-	// chain rpc connection
+	// Initialize chain RPC connection
 	clientInit, err := client.InitClient(ctx)
 	if err != nil {
-		deadlogs.Error(fmt.Sprintf("error to init client: %s", err.Error()))
-	} else {
-		deadlogs.Success("client initialized")
+		deadlogs.Error(fmt.Sprintf("Error initializing client: %s", err.Error()))
+		return
 	}
+	deadlogs.Success("Client initialized successfully")
 
 	// Initialize MongoDB connection
-	dbInstance, err := database.InitConnection() // This will establish MongoDB connection
+	dbInstance, err := database.InitConnection() // Establish MongoDB connection
 	if err != nil {
-		deadlogs.Error(fmt.Sprintf("error to init database: %s", err.Error()))
-	} else {
-		deadlogs.Success("database initialized")
+		deadlogs.Error(fmt.Sprintf("Error initializing database: %s", err.Error()))
+		return
 	}
+	deadlogs.Success("Database initialized successfully")
 
-	// Load the data from the JSON file and insert it into MongoDB
-	// if _ , err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
-	// 	log.Fatalf("Error loading and inserting data: %s", err)
-	// } else {
-	// 	deadlogs.Success("Data loaded and inserted successfully")
-	// }
 
-	// Print the loaded data for debugging (optional)
-	// fmt.Printf("Loaded Espresso Data: %+v\n", espressoData)
-	// Print the loaded data (you can modify this as per your requirement)
-	// fmt.Printf("Espresso Data: %+v\n", espressoData)
-	//go func() {
-	//	for {
-	//		deadlogs.Info("Checking and loading data from JSON file...")
-	//
-	//		// Lock the data to prevent collision with pruning
-	//		dataLock.Lock()
-	//		time.Sleep(time.Minute * 1)
-	//		if _, err := espresso.LoadDataFromFile(config.FilePath, dbInstance); err != nil {
-	//			deadlogs.Error(fmt.Sprintf("Error loading data: %s", err))
-	//		} else {
-	//			deadlogs.Success("Data loaded and inserted successfully")
-	//		}
-	//		dataLock.Unlock()
-	//
-	//		// Wait before the next check
-	//		time.Sleep(2 * time.Minute)
-	//	}
-	//}()
-
+	// Create a WaitGroup for the server and data load
 	var wg sync.WaitGroup
-	wg.Add(1)
 
+	// Start the data load function in a separate goroutine
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		espresso.DataLoadFunction(dbInstance)
-		wg.Done()
 	}()
 
+	// Start the server in a separate goroutine
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		serverInstance := server.InitServer(ctx, dbInstance, clientInit)
 		uri := fmt.Sprintf("0.0.0.0:%s", config.ServerPort)
-		runnerErr := serverInstance.Run(uri)
-		if runnerErr != nil {
-			deadlogs.Error(runnerErr.Error())
+		if err := serverInstance.Run(uri); err != nil {
+			deadlogs.Error(err.Error())
 		} else {
-			deadlogs.Success("server started")
+			deadlogs.Success("Server started successfully")
 		}
-		wg.Done()
 	}()
 
+	// Wait for all goroutines to finish
 	wg.Wait()
 }

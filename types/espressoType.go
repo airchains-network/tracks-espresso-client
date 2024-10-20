@@ -4,6 +4,7 @@ type EspressoSchemaV1 struct {
 	EspressoTxResponseV1 EspressoTxResponseV1 `json:"espresso_tx_response_v_1"`
 	StationID            string               `json:"station_id"`
 	PodNumber            int                  `json:"pod_number"`
+	VerificationStatus           bool                 `json:"verificationStatus"`
 }
 
 type EspressoTxResponseV1 struct {

@@ -6,6 +6,8 @@ import (
 	"github.com/airchains-network/tracks-espresso-client/config"
 	"github.com/airchains-network/tracks-espresso-client/database"
 	"github.com/deadlium/deadlogs"
+	"github.com/airchains-network/tracks-espresso-client/types"
+
 	"os"
 	"time"
 )
@@ -44,6 +46,26 @@ func DataLoadFunction(mongo *database.DB) {
 			deadlogs.Warn(fmt.Sprintf("Error unmarshalling file data: %s", err.Error()))
 			fileLock.Unlock()
 		}
+		
+		// batchesData := BatchData(espressoData)
+
+		var espressoDataInterface []interface{}
+
+		// Convert []interface{} to []types.EspressoSchemaV1
+		var espressoDataload []types.EspressoSchemaV1
+		
+		for _, item := range espressoDataInterface {
+			if espresso, ok := item.(types.EspressoSchemaV1); ok {
+				espressoData = append(espressoData, espresso)
+			} else {
+				// Handle the case where the type assertion fails, if necessary
+				// You can log an error or skip this item
+			}
+		}
+		
+		// Now call BatchData with the correct type
+		batchesData := BatchData(espressoDataload)
+		fmt.Println("batchdata", batchesData)
 
 		// Insert the data into MongoDB
 		err = mongo.InsertMany(espressoData)
@@ -62,7 +84,7 @@ func DataLoadFunction(mongo *database.DB) {
 		// Release the file lock
 		fileLock.Unlock()
 
-		deadlogs.Success("Data loaded successfully, file purged, retrying in 30 seconds")
+		deadlogs.Success("Data loaded successfully, file purged, retrying in 1 min")
 
 		// Wait 30 seconds before retrying
 		time.Sleep(time.Second * 30)

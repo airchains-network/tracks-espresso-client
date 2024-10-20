@@ -64,7 +64,7 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 
 		// Append new data to the existing data
 		espressoDataLoad := append(espressoData, types.MongoTracksEspressoStruct{
-			EspressoStationId: fmt.Sprintf("%s-%v", tracksEspressoStruct.StationID, tracksEspressoStruct.PodNumber),
+			EspressoStationId: fmt.Sprintf("%s_%v", tracksEspressoStruct.StationID, tracksEspressoStruct.PodNumber),
 			EspressoTxResponseV1: types.EspressoTxResponseV1{
 				Transaction: struct {
 					Namespace int    `json:"namespace"`
@@ -161,4 +161,23 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 			Description: "Data successfully saved to file",
 		})
 	}
+}
+
+func BatchData(espressoData []types.EspressoSchemaV1) []map[string]interface{} {
+	batchSize := len(espressoData) / 2
+	var batchesData []map[string]interface{}
+
+	for i := 0; i < batchSize; i++ {
+		if i < len(espressoData) {
+			batchItem := map[string]interface{}{
+				// "espressostationid": espressoData[i].StationId,
+				"namespace":         espressoData[i].EspressoTxResponseV1.Transaction.Namespace,
+				"podNumber":         espressoData[i].PodNumber,
+				"verificationStatus": true,
+			}
+			batchesData = append(batchesData, batchItem)
+		}
+	}
+
+	return batchesData
 }
