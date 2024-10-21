@@ -3,13 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
+	// "go.mongodb.org/mongo-driver/bson"
 
 	"github.com/airchains-network/tracks-espresso-client/config"
+	"github.com/airchains-network/tracks-espresso-client/types"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"github.com/airchains-network/tracks-espresso-client/types"
-
-	
 )
 
 // DB struct encapsulates the MongoDB database and collection
@@ -55,14 +54,15 @@ func (db *DB) InsertMany(documents []interface{}) error {
 	return nil
 }
 
-func (db *DB) UpdateTransaction(transaction types.EspressoSchemaV1) error {
-    collection := db.Collection("espresso-data")
 
-    // Update the processed field of the transaction
-    _, err := collection.UpdateOne(
-        context.Background(),
-        map[string]interface{}{"station_id": transaction.StationID}, // Unique identifier for the transaction
-        map[string]interface{}{"$set": map[string]interface{}{"processed": true}},
-    )
-    return err
+func (db *DB) UpdateTransaction(transaction types.EspressoSchemaV1) error {
+	collection := db.Collection("espresso-data")
+
+	// Update the processed field of the transaction
+	_, err := collection.UpdateOne(
+		context.Background(),
+		map[string]interface{}{"station_id": transaction.StationID}, // Unique identifier for the transaction
+		map[string]interface{}{"$set": map[string]interface{}{"processed": true}},
+	)
+	return err
 }

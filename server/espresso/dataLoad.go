@@ -9,10 +9,10 @@ import (
 	"github.com/airchains-network/tracks-espresso-client/database"
 	"github.com/deadlium/deadlogs"
 
-	// "github.com/airchains-network/tracks-espresso-client/types"
 
 	"os"
 	"time"
+	// "context"
 )
 
 // DataLoadFunction Load data from JSON file to MongoDB
@@ -50,30 +50,15 @@ func DataLoadFunction(mongo *database.DB) {
 			deadlogs.Warn(fmt.Sprintf("Error unmarshalling file data: %s", err.Error()))
 			fileLock.Unlock()
 		}
-		// // batchesData := BatchData(espressoData)
-		// batchedData := BatchData(espressoData) // Ensure this function handles the batching correctly
-		// if len(batchedData) == 0 {
-		// 	deadlogs.Warn("No valid data to batch and insert.")
-		// 	fmt.Println("batchdatais",batchedData)
-		// 	fileLock.Unlock()
-		// 	time.Sleep(time.Second * 30) // Retry after waiting
-		// 	continue
-		// }
 		
-		// batches := BatchData(espressoData)
-		// fmt.Println("Batches Data:")
-		// for _, batch := range batches {
-		// 	fmt.Println(batch)
-		// }
-		// fmt.Println("batch data",batches)
-
 		// Insert the data into MongoDB
+		
 		err = mongo.InsertMany(espressoData)
 		if err != nil {
 			deadlogs.Warn(fmt.Sprintf("Error inserting into MongoDB: %s", err.Error()))
 			fileLock.Unlock()
 		}
-
+		
 		// Purge data from file after successful MongoDB insertion
 		err = os.WriteFile(config.FilePath, []byte("[]"), 0644)
 		if err != nil {
