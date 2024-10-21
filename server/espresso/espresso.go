@@ -61,6 +61,18 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 			})
 			return
 		}
+		// Call the BatchData function and handle the result
+		// batchResults := BatchData([]types.EspressoSchemaV1{tracksEspressoStruct})
+		
+		// Check if batchesData is empty and respond accordingly
+		// if len(batchResults) == 0 {
+		// 	c.JSON(http.StatusInternalServerError, types.Response{
+		// 		Status:      false,
+		// 		Message:     "Batch data is empty",
+		// 		Description: "No data could be batched from the input.",
+		// 	})
+		// 	return
+		// }
 
 		// Append new data to the existing data
 		espressoDataLoad := append(espressoData, types.MongoTracksEspressoStruct{
@@ -163,21 +175,98 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 	}
 }
 
-func BatchData(espressoData []types.EspressoSchemaV1) []map[string]interface{} {
-	batchSize := len(espressoData) / 2
-	var batchesData []map[string]interface{}
 
-	for i := 0; i < batchSize; i++ {
-		if i < len(espressoData) {
-			batchItem := map[string]interface{}{
-				// "espressostationid": espressoData[i].StationId,
-				"namespace":         espressoData[i].EspressoTxResponseV1.Transaction.Namespace,
-				"podNumber":         espressoData[i].PodNumber,
-				"verificationStatus": true,
-			}
-			batchesData = append(batchesData, batchItem)
-		}
-	}
 
-	return batchesData
-}
+// func BatchData(espressoData []types.EspressoSchemaV1) []map[string]interface{} {
+// 	batchSize := len(espressoData) / 2
+// 	var batchesData []map[string]interface{}
+
+// 	for i := 0; i < batchSize; i++ {
+// 		if i < len(espressoData) {
+// 			batchItem := map[string]interface{}{
+// 				"espressostationid": espressoData[i].StationID,
+// 				"namespace":         espressoData[i].EspressoTxResponseV1.Transaction.Namespace,
+// 				"podNumber":         espressoData[i].PodNumber,
+// 				"verificationStatus": true,
+// 			}
+// 			batchesData = append(batchesData, batchItem)
+// 		}
+// 	}
+// 	if len(batchesData) > 0 {
+//         fmt.Println("Batches data is not empty")
+//     } else {
+//         fmt.Println("Batches data is empty")
+//     }
+
+// 	return batchesData
+// }
+// func BatchData(data []interface{}) []interface{} {
+// 	var batchedData []interface{}
+
+// 	for _, item := range data {
+// 		// Assert that the item is of the expected type
+// 		if espressoItem, ok := item.(types.EspressoSchemaV1); ok {
+// 			// Here you can add any processing needed for batching
+// 			batchedData = append(batchedData, espressoItem)
+// 		} else {
+// 			// Handle cases where the item is not of the expected type
+// 			fmt.Printf("Unexpected item type: %T", item)
+// 		}
+// 	}
+
+// 	return batchedData
+// }
+// 
+// func BatchData(espressoData []interface{}) []map[string]interface{} {
+//     var batchesData []map[string]interface{}
+
+//     for _, item := range espressoData {
+//         // Check if the item is nil
+//         if item == nil {
+//             fmt.Println("Warning: Encountered a nil item, skipping.")
+//             continue // Skip this nil item
+//         }
+
+//         // Assert that the item is of type map[string]interface{}
+//         dataMap, ok := item.(map[string]interface{})
+//         if !ok {
+//             fmt.Printf("Error: Item is not a map[string]interface{}. Actual type: %T\n", item)
+//             continue // Skip this item if type assertion fails
+//         }
+
+//         // Extract fields from the map
+//         stationID, ok1 := dataMap["StationID"].(string)
+//         namespaceData, ok2 := dataMap["EspressoTxResponseV1"].(map[string]interface{})
+//         var namespace string
+//         if ok2 {
+//             // Access the nested field
+//             namespaceMap, ok3 := namespaceData["Transaction"].(map[string]interface{})
+//             if ok3 {
+//                 namespace, _ = namespaceMap["Namespace"].(string)
+//             }
+//         }
+//         podNumber, ok4 := dataMap["PodNumber"].(string)
+
+//         // Check if all required fields are present
+//         if !(ok1 && ok2 && ok4 && namespace != "") {
+//             fmt.Println("Error: Missing required fields")
+//             continue
+//         }
+
+//         // Create a map for each batch item
+//         batchItem := map[string]interface{}{
+//             "espressostationid": stationID,
+//             "namespace":         namespace,
+//             "podNumber":         podNumber,
+//             "verificationStatus": true, // Assuming verification status is always true
+//         }
+
+//         // Append the constructed map to batchesData
+//         batchesData = append(batchesData, batchItem)
+//     }
+
+//     // Print the batches data for debugging
+//     fmt.Println("Batches Data:", batchesData)
+
+//     return batchesData
+// }

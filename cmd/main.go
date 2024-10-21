@@ -11,6 +11,7 @@ import (
 	"github.com/airchains-network/tracks-espresso-client/server"
 	"github.com/airchains-network/tracks-espresso-client/server/espresso"
 	"github.com/deadlium/deadlogs"
+	// "github.com/airchains-network/tracks-espresso-client/batches"
 )
 
 func main() {
@@ -38,8 +39,8 @@ func main() {
 		return
 	}
 	deadlogs.Success("Database initialized successfully")
-
-
+	
+	// batches.Batch()
 	// Create a WaitGroup for the server and data load
 	var wg sync.WaitGroup
 

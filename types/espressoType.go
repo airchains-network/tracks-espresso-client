@@ -37,3 +37,10 @@ type EspressoTxResponseV1 struct {
 	BlockHash   string `json:"block_hash"`
 	BlockHeight int    `json:"block_height"`
 }
+
+type SequencerCheck struct {
+    ExtTrackStationId   string `json:"ext_track_station_id"`
+    Namespace           string `json:"namespace"`
+    PodNumber           string `json:"pod_number"`
+    VerificationStatus  bool   `json:"verification_status"`
+}

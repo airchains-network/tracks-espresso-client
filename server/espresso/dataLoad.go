@@ -3,10 +3,13 @@ package espresso
 import (
 	"encoding/json"
 	"fmt"
+
+	// "github.com/airchains-network/tracks-espresso-client/batches"
 	"github.com/airchains-network/tracks-espresso-client/config"
 	"github.com/airchains-network/tracks-espresso-client/database"
 	"github.com/deadlium/deadlogs"
-	"github.com/airchains-network/tracks-espresso-client/types"
+
+	// "github.com/airchains-network/tracks-espresso-client/types"
 
 	"os"
 	"time"
@@ -40,32 +43,29 @@ func DataLoadFunction(mongo *database.DB) {
 			deadlogs.Warn(fmt.Sprintf("Error reading file: %s", err.Error()))
 			fileLock.Unlock()
 		}
+		
 
 		// Unmarshal JSON data into espressoData slice
 		if err = json.Unmarshal(fileBytes, &espressoData); err != nil {
 			deadlogs.Warn(fmt.Sprintf("Error unmarshalling file data: %s", err.Error()))
 			fileLock.Unlock()
 		}
+		// // batchesData := BatchData(espressoData)
+		// batchedData := BatchData(espressoData) // Ensure this function handles the batching correctly
+		// if len(batchedData) == 0 {
+		// 	deadlogs.Warn("No valid data to batch and insert.")
+		// 	fmt.Println("batchdatais",batchedData)
+		// 	fileLock.Unlock()
+		// 	time.Sleep(time.Second * 30) // Retry after waiting
+		// 	continue
+		// }
 		
-		// batchesData := BatchData(espressoData)
-
-		var espressoDataInterface []interface{}
-
-		// Convert []interface{} to []types.EspressoSchemaV1
-		var espressoDataload []types.EspressoSchemaV1
-		
-		for _, item := range espressoDataInterface {
-			if espresso, ok := item.(types.EspressoSchemaV1); ok {
-				espressoData = append(espressoData, espresso)
-			} else {
-				// Handle the case where the type assertion fails, if necessary
-				// You can log an error or skip this item
-			}
-		}
-		
-		// Now call BatchData with the correct type
-		batchesData := BatchData(espressoDataload)
-		fmt.Println("batchdata", batchesData)
+		// batches := BatchData(espressoData)
+		// fmt.Println("Batches Data:")
+		// for _, batch := range batches {
+		// 	fmt.Println(batch)
+		// }
+		// fmt.Println("batch data",batches)
 
 		// Insert the data into MongoDB
 		err = mongo.InsertMany(espressoData)
@@ -84,7 +84,7 @@ func DataLoadFunction(mongo *database.DB) {
 		// Release the file lock
 		fileLock.Unlock()
 
-		deadlogs.Success("Data loaded successfully, file purged, retrying in 1 min")
+		deadlogs.Success("Data loaded successfully, file purged, retrying in 30 sec")
 
 		// Wait 30 seconds before retrying
 		time.Sleep(time.Second * 30)
