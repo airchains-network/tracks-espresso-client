@@ -41,8 +41,12 @@ func Batch(ctx context.Context, mongo database.DB, client cosmosclient.Client, a
 		{Key: "espresso_tx_response_v_1", Value: 1},
 	}
 
+	option := options.Find().SetProjection(projection).
+	SetLimit(100).
+	SetSort(bson.D{{Key :"created_at", Value: 1}})
+
 	// Find documents in MongoDB with projection
-	cursor, err := collection.Find(ctx, bson.D{}, options.Find().SetProjection(projection))
+	cursor, err := collection.Find(ctx, bson.D{}, option)
 	if err != nil {
 		log.Fatalf("Failed to fetch data from MongoDB: %v", err)
 	}
@@ -96,7 +100,8 @@ func Batch(ctx context.Context, mongo database.DB, client cosmosclient.Client, a
         for i, check := range seqcheck {
             if check.VerificationStatus {
                 // If VerificationStatus is true, prepare to delete this entry
-                idsToDelete = append(idsToDelete, check.ExtTrackStationId)
+				uniqueId := check.ExtTrackStationId + check.PodNumber 
+                idsToDelete = append(idsToDelete, uniqueId)
                 // Optionally remove the entry from seqcheck
                 seqcheck = append(seqcheck[:i], seqcheck[i+1:]...) // Remove the entry from seqcheck
             }
@@ -105,7 +110,7 @@ func Batch(ctx context.Context, mongo database.DB, client cosmosclient.Client, a
         // Delete the corresponding records from MongoDB
         if len(idsToDelete) > 0 {
             // Assuming ExtTrackStationId is a unique identifier for the records
-            _, err := collection.DeleteMany(ctx, bson.D{{Key: "station_id", Value: bson.D{{Key: "$in", Value: idsToDelete}}}})
+            _, err := collection.DeleteMany(ctx, bson.D{{Key: "EspressoStationId", Value: bson.D{{Key: "$in", Value: idsToDelete}}}})
             if err != nil {
                 log.Printf("Failed to delete records from MongoDB: %v", err)
             } else {

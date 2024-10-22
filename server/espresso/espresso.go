@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/airchains-network/tracks-espresso-client/config"
 	"github.com/airchains-network/tracks-espresso-client/types"
@@ -63,7 +64,7 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 		}
 		// Call the BatchData function and handle the result
 		// batchResults := BatchData([]types.EspressoSchemaV1{tracksEspressoStruct})
-		
+
 		// Check if batchesData is empty and respond accordingly
 		// if len(batchResults) == 0 {
 		// 	c.JSON(http.StatusInternalServerError, types.Response{
@@ -143,6 +144,7 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 			},
 			StationId: tracksEspressoStruct.StationID,
 			PodNumber: tracksEspressoStruct.PodNumber,
+			CreatedAt: time.Now(),
 		})
 
 		// Marshal the updated data back to JSON and write to the file
@@ -174,8 +176,6 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 		})
 	}
 }
-
-
 
 // func BatchData(espressoData []types.EspressoSchemaV1) []map[string]interface{} {
 // 	batchSize := len(espressoData) / 2
@@ -216,7 +216,7 @@ func TracksEspressoDataLoad() gin.HandlerFunc {
 
 // 	return batchedData
 // }
-// 
+//
 // func BatchData(espressoData []interface{}) []map[string]interface{} {
 //     var batchesData []map[string]interface{}
 

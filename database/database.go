@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	// "go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/airchains-network/tracks-espresso-client/config"
 	"github.com/airchains-network/tracks-espresso-client/types"
@@ -32,9 +32,28 @@ func InitConnection() (*DB, error) {
 
 	db := client.Database("espresso")
 
-	return &DB{
+	mongoDB := &DB{
 		Database: db,
-	}, nil
+	}
+
+	mongoDB.CreateUniqueID()
+
+	return mongoDB, nil
+}
+
+func (db *DB) CreateUniqueID() error {
+	collection := db.Collection("espresso-data")
+	uniJson := mongo.IndexModel{
+		Keys: bson.D{{Key : "espresso_station_id", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}
+	_, err := collection.Indexes().CreateOne(context.TODO(), uniJson)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 // InsertMany inserts multiple documents into a MongoDB collection
